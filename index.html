@@ -20,6 +20,13 @@ Authors in chronological order of contribution:
 Author 1: Timothy E. Riedel
 Author 2: Alisha
 
+References:
+http://docs.webplatform.org/wiki/concepts/programming/drawing_images_onto_canvas#Loading_the_image_programmatically
+http://www.html5rocks.com/en/tutorials/file/dndfiles/
+http://www.w3.org/TR/FileAPI/
+http://mobilehtml5.org/
+http://stackoverflow.com/questions/11929099/html5-canvas-drawimage-ratio-bug-ios
+
 Brief Description of Goal of Code:
 The goal of this code is to create a second canvas capable of showing the "blue" channel of an imported image.
 
@@ -36,158 +43,159 @@ No known issues
   <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
   <script src="https://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
 
-<script>
-// Save and log when the HTML file was last modified
-var docMod = document.lastModified;
-console.log("This file last modified " + docMod);
+  <script>
+    // Save and log when the HTML file was last modified
+    var docMod = document.lastModified;
+    console.log("This file last modified " + docMod);
 
-// These two functions fix a bug where iPhone images get squished when displayed on a canvas
+    // These two functions fix a bug where iPhone images get squished when displayed on a canvas
 
-function detectVerticalSquash(img) {
-  var iw = img.naturalWidth, ih = img.naturalHeight;
-  var canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = ih;
-  var ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0);
-  var data = ctx.getImageData(0, 0, 1, ih).data;
-  var sy = 0;
-  var ey = ih;
-  var py = ih;
-  while (py > sy) {
-    var alpha = data[(py - 1) * 4 + 3];
-    if (alpha === 0) {
-      ey = py;
-    } else {
-      sy = py;
+    function detectVerticalSquash(img) {
+      var iw = img.naturalWidth, ih = img.naturalHeight;
+      var canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = ih;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      var data = ctx.getImageData(0, 0, 1, ih).data;
+      var sy = 0;
+      var ey = ih;
+      var py = ih;
+      while (py > sy) {
+        var alpha = data[(py - 1) * 4 + 3];
+        if (alpha === 0) {
+          ey = py;
+        } else {
+          sy = py;
+        }
+        py = (ey + sy) >> 1;
+      }
+      var ratio = (py / ih);
+      return (ratio === 0) ? 1 : ratio;
     }
-    py = (ey + sy) >> 1;
-  }
-  var ratio = (py / ih);
-  return (ratio === 0) ? 1 : ratio;
-}
-// This function checks how squished the image is vertically and returns a ratio to correct it.
+    // This function checks how squished the image is vertically and returns a ratio to correct it.
 
-function drawImageIOSFix(ctx, img, sx, sy, sw, sh, dx, dy, dw, dh) {
-  var vertSquashRatio = detectVerticalSquash(img);
-  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh / vertSquashRatio);
-}
-// This function redraws the image onto the canvas with the corrected vertical ratio.
+    function drawImageIOSFix(ctx, img, sx, sy, sw, sh, dx, dy, dw, dh) {
+      var vertSquashRatio = detectVerticalSquash(img);
+      ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh / vertSquashRatio);
+    }
+    // This function redraws the image onto the canvas with the corrected vertical ratio.
 
-window.onload = function() {
-  // Wait until the page fully loads before running scripts
+    window.onload = function () {
+      // Wait until the page fully loads before running scripts
 
-  var fileInput = document.getElementById('fileInput');
-  var messageDisplayArea = document.getElementById('messageDisplayArea');
-  // Set up references to HTML elements
+      var fileInput = document.getElementById('fileInput');
+      var messageDisplayArea = document.getElementById('messageDisplayArea');
+      // Set up references to HTML elements
 
-  fileInput.addEventListener('change', function(e) {
-    // When the user picks a file, run this code
+      fileInput.addEventListener('change', function (e) {
+        // When the user picks a file, run this code
 
-    var file = fileInput.files[0];
-    var imageType = /image.*/;
-    // Only allow image files
+        var file = fileInput.files[0];
+        var imageType = /image.*/;
+        // Only allow image files
 
-    if (file.type.match(imageType)) {
-      // If it is an image, continue
+        if (file.type.match(imageType)) {
+          // If it is an image, continue
 
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        // When file is read, create a new Image object
+          var reader = new FileReader();
+          reader.onload = function (e) {
+            // When file is read, create a new Image object
 
-        messageDisplayArea.innerHTML = "You picked an image!";
-        // Let the user know a file was selected
+            messageDisplayArea.innerHTML = "You picked an image!";
+            // Let the user know a file was selected
 
-        var img = new Image();
-        img.onload = function() {
-          // When the image loads, draw it onto the first canvas
+            var img = new Image();
+            img.onload = function () {
+              // When the image loads, draw it onto the first canvas
 
-          drawImageIOSFix(context, img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0, 600, 500);
-          // Draw the image while fixing any iOS squishing issues
+              drawImageIOSFix(context, img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0, 600, 500);
+              // Draw the image while fixing any iOS squishing issues
 
-          /*  +++++++++++++++ BEGIN IMAGE PROCESSING +++++++++++++++ */
-          /*  ++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+              /*  +++++++++++++++ BEGIN IMAGE PROCESSING +++++++++++++++ */
+              /*  ++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 
-          // Get image pixel data from the first canvas
-          var imageData = context.getImageData(0, 0, 600, 500);
-          var data = imageData.data;
+              // Get image pixel data from the first canvas
+              var imageData = context.getImageData(0, 0, 600, 500);
+              var data = imageData.data;
 
-          // Loop through every pixel
-          for (var i = 0; i < data.length; i += 4) {
-            var blue = data[i + 2]; // Blue channel value
-            data[i] = 0;       // Set Red channel to 0
-            data[i + 1] = 0;   // Set Green channel to 0
-            data[i + 2] = blue; // Keep Blue channel as is
-            // Alpha (transparency) is not changed
-          }
+              // Loop through every pixel
+              for (var i = 0; i < data.length; i += 4) {
+                var blue = data[i + 2]; // Blue channel value
+                data[i] = 0;       // Set Red channel to 0
+                data[i + 1] = 0;   // Set Green channel to 0
+                data[i + 2] = blue; // Keep Blue channel as is
+                // Alpha (transparency) is not changed
+              }
 
-          // Draw the processed image onto the second canvas
-          secondContext.putImageData(imageData, 0, 0);
+              // Draw the processed image onto the second canvas
+              secondContext.putImageData(imageData, 0, 0);
 
-        } // End of img.onload
+            } // End of img.onload
 
-        img.src = reader.result;
-        // Set the source of the image to the file content
-      } // End of reader.onload
+            img.src = reader.result;
+            // Set the source of the image to the file content
+          } // End of reader.onload
 
-      reader.readAsDataURL(file);
-      // Read the uploaded file as a data URL
+          reader.readAsDataURL(file);
+          // Read the uploaded file as a data URL
 
-    } else {
-      // If not an image file
-      messageDisplayArea.innerHTML = "File not supported!"
-    } // End of if-else
-  }); // End of fileInput eventListener
-} // End of window.onload
-</script>
+        } else {
+          // If not an image file
+          messageDisplayArea.innerHTML = "File not supported!"
+        } // End of if-else
+      }); // End of fileInput eventListener
+    } // End of window.onload
+  </script>
 </head>
 
 <body>
-<div data-role="page">
-  <div data-role="header">
-    <h1>Primary Colors</h1>
-  </div><!-- /header -->
+  <div data-role="page">
+    <div data-role="header">
+      <h1>Primary Colors</h1>
+    </div> <!-- /header -->
 
-  <div data-role="content">	
-    <h2>Push button to take picture.</h2>
+    <div data-role="content">
+      <h2>Push button to take picture.</h2>
 
-    <div>
-      Press orange button to create or choose image file:
-      <input type="file" id="fileInput" style="background-color: #FF6600;">
-    </div>
-    <!-- This is where the file input button appears -->
+      <div>
+        Press orange button to create or choose image file:
+        <input type="file" id="fileInput" style="background-color: #FF6600;">
+      </div>
+      <!-- This is where the file input button appears -->
 
-    <div id="messageDisplayArea"></div>
-    <!-- This is where feedback messages will appear -->
+      <div id="messageDisplayArea"></div>
+      <!-- This is where feedback messages will appear -->
 
-    <canvas id="myCanvas" width=600 height=500 style="border:1px solid #d3d3d3;"></canvas>
-    <script>
-      // This script initializes the first canvas and writes text on it
-      var canvas = document.getElementById('myCanvas');
-      var context = canvas.getContext("2d");
-      context.font = '20pt Calibri';
-      context.fillStyle = "black";
-      context.fillText("Original image will go here", 10, 20);
-    </script>
+      <canvas id="myCanvas" width="600" height="500" style="border:1px solid #d3d3d3;"></canvas>
+      <script>
+        // This script initializes the first canvas and writes text on it
+        var canvas = document.getElementById('myCanvas');
+        var context = canvas.getContext("2d");
+        context.font = '20pt Calibri';
+        context.fillStyle = "black";
+        context.fillText("Original image will go here", 10, 20);
+      </script>
 
-    <br><br>
+      <br><br>
 
-    <canvas id="secondCanvas" width=600 height=500 style="border:1px solid #d3d3d3;"></canvas>
-    <script>
-      // This script initializes the second canvas and writes text on it
-      var secondCanvas = document.getElementById('secondCanvas');
-      var secondContext = secondCanvas.getContext("2d");
-      secondContext.font = '20pt Calibri';
-      secondContext.fillStyle = "black";
-      secondContext.fillText("Blue channel will go here", 10, 20);
-    </script>
-    <!-- Second canvas will show the blue-only version of the uploaded image -->
+      <canvas id="secondCanvas" width="600" height="500" style="border:1px solid #d3d3d3;"></canvas>
+      <script>
+        // This script initializes the second canvas and writes text on it
+        var secondCanvas = document.getElementById('secondCanvas');
+        var secondContext = secondCanvas.getContext("2d");
+        secondContext.font = '20pt Calibri';
+        secondContext.fillStyle = "black";
+        secondContext.fillText("Blue channel will go here", 10, 20);
+      </script>
+      <!-- Second canvas will show the blue-only version of the uploaded image -->
 
-  </div><!-- /content -->
+    </div> <!-- /content -->
 
-  <div data-role="footer" data-position="fixed">
-    <p>DIY Diagnostics</p>
-  </div><!-- /footer -->
-</div><!-- /page -->
+    <div data-role="footer" data-position="fixed">
+      <p>DIY Diagnostics</p>
+    </div> <!-- /footer -->
+  </div> <!-- /page -->
 </body>
+
 </html>
